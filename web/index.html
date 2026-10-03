@@ -1,0 +1,1194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quantum Echo: The City That Forgot</title>
+    <link rel="stylesheet" href="style.css?v=19">
+    <!-- Offline Three.js library -->
+    <script src="three.min.js"></script>
+    <script src="quantum-engine.js"></script>
+</head>
+<body>
+    <!-- 3D Canvas -->
+    <div id="canvas-container"></div>
+
+    <!-- UI Overlay Layer -->
+    <div class="ui-layer">
+        <!-- Objective & First-Time Tutorial Card -->
+        <div id="objective-card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                <div class="chapter-tag" id="hud-chapter-tag">Chapter 1: Arrival Harbor</div>
+                <button id="btn-how-to-play" class="interactive guide-toggle-btn">? HOW TO PLAY</button>
+            </div>
+            <div class="district-title" id="hud-district-title">Floating City of Aster</div>
+            <div class="objective-desc" id="hud-objective-desc">Explore the harbor and calibrate Terminal Alpha to stabilize your Echo Lantern.</div>
+
+            <!-- Active Step-by-Step Instruction Guide -->
+            <div id="tutorial-action-banner">
+                <div class="banner-badge-row">
+                    <span class="action-banner-badge" id="action-step-badge">CURRENT MISSION</span>
+                    <span class="step-indicator" id="action-step-counter">STEP 1 of 4</span>
+                </div>
+                <div class="action-banner-text" id="action-step-text">
+                    👉 <b>Walk to Terminal Alpha</b> on your <b>LEFT</b> (glowing blue beacon)
+                </div>
+                <div class="action-banner-hint" id="action-step-hint" style="display: none !important;"></div>
+            </div>
+        </div>
+
+        <!-- Echo Lantern Qubit HUD -->
+        <div id="lantern-hud">
+            <div class="hud-header">
+                <span class="hud-title">Echo Lantern Qubit</span>
+                <span class="state-badge" id="hud-state-label">Blue (0)</span>
+            </div>
+            <div class="hud-metric">
+                <div class="metric-labels">
+                    <span>🔵 Blue Light (0)</span>
+                    <span id="hud-p0-val">100%</span>
+                </div>
+                <div class="meter-track">
+                    <div class="meter-fill-0" id="hud-meter-0" style="width: 100%;"></div>
+                </div>
+            </div>
+            <div class="hud-metric">
+                <div class="metric-labels">
+                    <span>🟡 Yellow Light (1)</span>
+                    <span id="hud-p1-val">0%</span>
+                </div>
+                <div class="meter-track">
+                    <div class="meter-fill-1" id="hud-meter-1" style="width: 0%;"></div>
+                </div>
+            </div>
+            <div class="hud-metric">
+                <div class="metric-labels">
+                    <span>Relative Phase φ</span>
+                    <span class="phase-text" id="hud-phase-val">0.0°</span>
+                </div>
+            </div>
+            <div style="font-size: 11px; color: #64748b; margin-top: 6px;">
+                Circuit: <span id="hud-circuit-text" style="color: #cbd5e1;">Empty</span>
+            </div>
+            <div style="font-size: 11px; color: #64748b; margin-top: 4px;">
+                Press <b>[J]</b> Jump | <b>[C]</b> Codex | <b>[Esc]</b> Pause
+            </div>
+        </div>
+
+        <!-- Controls Helper Bar -->
+        <div id="controls-helper-bar">
+            <span>🎮 Controls: <b>WASD</b> to Walk | <b>[J] or [Space]</b> to JUMP | <b>[E]</b> to Interact | Drag Mouse to Look</span>
+        </div>
+
+        <!-- Crosshair & Interaction Prompt -->
+        <div id="crosshair"></div>
+        <div id="interact-prompt">[E] Access Console</div>
+
+        <!-- On-Screen Virtual Controls (D-Pad & Movement) -->
+        <div id="virtual-dpad" class="interactive">
+            <div class="dpad-row">
+                <button class="key-btn" id="key-w" data-key="w"><span>W</span><small>▲</small></button>
+            </div>
+            <div class="dpad-row">
+                <button class="key-btn" id="key-a" data-key="a"><span>A</span><small>◀</small></button>
+                <button class="key-btn" id="key-s" data-key="s"><span>S</span><small>▼</small></button>
+                <button class="key-btn" id="key-d" data-key="d"><span>D</span><small>▶</small></button>
+            </div>
+        </div>
+
+        <!-- On-Screen Action Keys (Jump & Interact & Codex) -->
+        <div id="virtual-actions" class="interactive">
+            <div class="primary-actions">
+                <button class="action-key-btn highlight jump-btn" id="hud-jump-btn" data-key="j" title="Press [J] or [Space] to Jump">
+                    <span class="key-icon">J</span>
+                    <span class="key-label">JUMP</span>
+                </button>
+                <button class="action-key-btn highlight" id="hud-interact-btn" data-key="e">
+                    <span class="key-icon">E</span>
+                    <span class="key-label" id="action-btn-label">INTERACT</span>
+                </button>
+            </div>
+            <div class="secondary-actions">
+                <button class="action-key-btn small" id="hud-codex-btn" data-key="c" title="Open Codex [C]">
+                    <span class="key-icon">C</span>
+                    <span class="key-label">CODEX</span>
+                </button>
+                <button class="action-key-btn small" id="hud-gates-btn" data-key="g" title="Gate Guide [G] — how to open every gate" onclick="document.getElementById('gate-guide-modal').style.display='flex'" style="background: linear-gradient(135deg, #b45309, #d97706); border: 1px solid #f59e0b;">
+                    <span class="key-icon">G</span>
+                    <span class="key-label">GATES</span>
+                </button>
+                <button class="action-key-btn small" id="hud-pause-btn" data-key="escape">
+                    <span class="key-icon">ESC</span>
+                    <span class="key-label">PAUSE</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Dialogue Subtitle Box -->
+        <div id="dialogue-box" class="interactive">
+            <div class="dialogue-speaker" id="dialogue-speaker">Lumi</div>
+            <div class="dialogue-text" id="dialogue-text">Welcome to Aster, Mira. The city has lost its quantum coherence.</div>
+            <div style="display: flex; gap: 8px; justify-content: flex-end; margin-top: 8px;">
+                <button class="dialogue-btn" id="dialogue-poppers-btn" style="display: none; background: linear-gradient(135deg, #f59e0b, #ec4899); border: none; font-weight: 800; color: #fff; box-shadow: 0 0 15px rgba(245, 158, 11, 0.5); padding: 8px 16px; border-radius: 6px; cursor: pointer;">🎉 POP PARTY POPPERS!</button>
+                <button class="dialogue-btn" id="dialogue-advance-btn">Next ➔ [Space/E]</button>
+            </div>
+        </div>
+
+        <!-- Banner Toast Notification -->
+        <div id="banner-toast">Notification Message</div>
+    </div>
+
+    <!-- Quantum Console Modal -->
+    <div id="console-modal" class="modal-overlay">
+        <div class="modal-window" style="width: min(640px, 96vw); max-height: 92vh; overflow-y: auto;">
+            <div class="modal-header">
+                <div>
+                    <div style="font-size: 11px; color: var(--cyan); font-weight: 700; text-transform: uppercase; letter-spacing: 1px;" id="console-chapter-header">Chapter 1</div>
+                    <div class="modal-title" id="console-title">Terminal Calibration</div>
+                </div>
+                <button class="close-btn" id="console-close-btn">✕ Close [Esc]</button>
+            </div>
+
+            <!-- Gate animation strip -->
+            <div class="layman-gate-widget" id="console-gate-anim" style="margin-bottom: 0;">
+                <div class="gate-anim-frame">
+                    <div class="gate-anim-doors-container">
+                        <div class="gate-anim-door left" id="gate-anim-door-l">
+                            <div class="gate-bar"></div><div class="gate-bar"></div><div class="gate-bar"></div><div class="gate-brace"></div>
+                        </div>
+                        <div class="gate-anim-lock-center" id="gate-anim-lock">🔒</div>
+                        <div class="gate-anim-door right" id="gate-anim-door-r">
+                            <div class="gate-bar"></div><div class="gate-bar"></div><div class="gate-bar"></div><div class="gate-brace"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="gate-anim-caption" id="gate-anim-caption">
+                    <span class="gate-caption-dot" id="gate-caption-dot"></span>
+                    <span id="gate-caption-text">BARRIER IS CLOSED 🔒</span>
+                </div>
+            </div>
+
+            <!-- === SIMPLE 3-STEP BEGINNER LAYOUT === -->
+            <div style="display: flex; flex-direction: column; gap: 12px; padding: 16px;">
+
+                <!-- ROW 1: Two columns — Lantern NOW | Barrier NEEDS -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+
+                    <!-- YOUR LANTERN RIGHT NOW -->
+                    <div style="background: rgba(15,23,42,0.8); border: 1px solid rgba(56,189,248,0.25); border-radius: 12px; padding: 16px; text-align: center;">
+                        <div style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;">🔦 Your Lantern Now</div>
+                        <div id="simple-lantern-icon" style="font-size: 52px; line-height: 1; margin-bottom: 8px;">🔵</div>
+                        <div id="simple-lantern-name" style="font-size: 16px; font-weight: 700; color: #e2e8f0; margin-bottom: 4px;">Blue Light</div>
+                        <div id="simple-lantern-desc" style="font-size: 12px; color: #94a3b8;">100% Blue · 0% Yellow</div>
+                    </div>
+
+                    <!-- WHAT THE BARRIER NEEDS -->
+                    <div style="background: rgba(15,23,42,0.8); border: 1px solid rgba(251,191,36,0.25); border-radius: 12px; padding: 16px; text-align: center;">
+                        <div style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;">🚪 Barrier Needs</div>
+                        <div id="simple-target-icon" style="font-size: 52px; line-height: 1; margin-bottom: 8px;">🟡</div>
+                        <div id="simple-target-name" style="font-size: 16px; font-weight: 700; color: #e2e8f0; margin-bottom: 4px;">Yellow Light</div>
+                        <div id="simple-target-desc" style="font-size: 12px; color: #94a3b8;">100% Yellow · 0% Blue</div>
+                    </div>
+                </div>
+
+                <!-- MATCH STATUS BAR -->
+                <div id="simple-match-bar" style="background: rgba(15,23,42,0.6); border: 2px solid #ef4444; border-radius: 10px; padding: 12px 16px; text-align: center; transition: border-color 0.3s;">
+                    <div id="simple-match-text" style="font-size: 14px; font-weight: 700; color: #ef4444;">❌ Not matching yet — use the buttons below</div>
+                    <div class="meter-track" style="margin-top: 8px; height: 8px;">
+                        <div id="console-fidelity-meter" style="width: 0%; height: 100%; background: var(--green); border-radius: 4px; transition: width 0.3s;"></div>
+                    </div>
+                </div>
+
+                <!-- ⚡ LIVE QUANTUM CIRCUIT & BLOCH SPHERE DIAGRAM (User Attachments 1, 2, & 3) -->
+                <div id="console-quantum-diagram-card" style="background: #030712; border: 1.5px solid #1e3a5f; border-radius: 12px; padding: 14px; box-shadow: 0 4px 25px rgba(0,0,0,0.6);">
+                    <!-- Top Formula Screen (Picture 3 style) -->
+                    <div style="background: #000000; border: 1px solid rgba(34, 211, 238, 0.35); border-radius: 8px; padding: 8px 12px; text-align: center; margin-bottom: 10px;">
+                        <div id="console-diagram-formula" style="font-family: 'JetBrains Mono', monospace; font-size: 14px; font-weight: 700; color: #22d3ee; letter-spacing: 0.5px;">
+                            X|0⟩ = |1⟩   X|1⟩ = |0⟩   X² = I
+                        </div>
+                    </div>
+
+                    <!-- Header -->
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                        <span style="font-size: 11px; font-weight: 700; color: #f59e0b; text-transform: uppercase; letter-spacing: 1px;">⚡ QUANTUM CIRCUIT DIAGRAM</span>
+                        <span id="console-diagram-sublabel" style="font-size: 11px; color: #94a3b8;">Qubit Wire Execution</span>
+                    </div>
+
+                    <!-- Live Circuit Wire SVG (Picture 3 style) -->
+                    <div id="console-circuit-svg-container" style="background: #080f1d; border: 1px solid rgba(255,255,255,0.06); border-radius: 8px; padding: 8px; min-height: 58px; display: flex; align-items: center; justify-content: center; overflow-x: auto;">
+                        <!-- Dynamically populated circuit SVG -->
+                    </div>
+
+                    <!-- Bloch Sphere Vector & Matrix Info (Picture 1 & 2 style) -->
+                    <div style="display: grid; grid-template-columns: 140px 1fr; gap: 12px; margin-top: 10px; background: #080f1d; border: 1px solid rgba(56,189,248,0.15); border-radius: 8px; padding: 10px; align-items: center;">
+                        <div style="display: flex; flex-direction: column; align-items: center;">
+                            <div style="font-size: 10px; font-weight: 700; color: #94a3b8; text-transform: uppercase; margin-bottom: 2px;">BLOCH SPHERE</div>
+                            <canvas id="console-bloch-canvas-2" width="130" height="130" style="width: 130px; height: 130px; border-radius: 8px; background: #030712;"></canvas>
+                            <div id="console-bloch-state-badge" style="font-size: 11px; font-weight: 700; color: #ec4899; margin-top: 3px;">|ψ⟩ = |0⟩</div>
+                        </div>
+
+                        <div style="display: flex; flex-direction: column; gap: 5px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <span id="console-diagram-op-name" style="font-size: 11px; font-weight: 700; color: #60a5fa;">Operator: Identity</span>
+                                <span id="console-diagram-rot-axis" style="font-size: 10px; font-family: monospace; color: #c084fc;">Axis: Z</span>
+                            </div>
+                            <div id="console-diagram-matrix-box" style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #38bdf8; background: #030712; border: 1px solid rgba(255,255,255,0.06); border-radius: 6px; padding: 6px 8px; line-height: 1.35; white-space: pre;">R = [ 1  0 ]
+    [ 0  1 ]</div>
+                            <div id="console-diagram-desc-text" style="font-size: 11px; color: #94a3b8; line-height: 1.35;">
+                                Pure Blue ground state aligned along North pole (+Z).
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- BUTTONS -->
+                <div style="background: rgba(15,23,42,0.6); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 14px;">
+                    <div style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px;" id="available-tools-title">🛠 Your Tools</div>
+
+                    <!-- Prep buttons -->
+                    <div style="display: flex; gap: 8px; margin-bottom: 8px;">
+                        <button class="action-btn prep-btn-0" id="btn-prep-0" style="flex: 1; padding: 12px; font-size: 13px; font-weight: 700;">🔵 Set to Blue (Reset)</button>
+                        <button class="action-btn prep-btn-1" id="btn-prep-1" style="flex: 1; padding: 12px; font-size: 13px; font-weight: 700;">🟡 Set to Yellow</button>
+                    </div>
+
+                    <!-- Gate buttons -->
+                    <div class="button-grid" id="gate-button-container" style="gap: 8px;">
+                        <button class="gate-btn gate-x" data-gate="X" title="Flips Blue to Yellow, and Yellow to Blue">
+                            <span class="gate-symbol">X</span>
+                            <span class="gate-name">FLIP SWITCH</span>
+                            <small>Blue ↔ Yellow</small>
+                        </button>
+                        <button class="gate-btn gate-h" data-gate="H" title="Creates 50/50 mix of Blue and Yellow">
+                            <span class="gate-symbol">H</span>
+                            <span class="gate-name">BLENDER</span>
+                            <small>50/50 Mix</small>
+                        </button>
+                        <button class="gate-btn gate-z" data-gate="Z" title="Flips wave direction without changing brightness">
+                            <span class="gate-symbol">Z</span>
+                            <span class="gate-name">MIRROR</span>
+                            <small>Flip Wave</small>
+                        </button>
+                    </div>
+
+                    <!-- Undo / Reset -->
+                    <div style="display: flex; gap: 8px; margin-top: 8px;">
+                        <button class="action-btn" id="btn-apply-inverse" style="flex: 1; font-size: 12px;">↩ Undo Last Step</button>
+                        <button class="action-btn" id="btn-reset-puzzle" style="flex: 1; font-size: 12px;">🔄 Start Over</button>
+                    </div>
+                </div>
+
+                <!-- ACTIVATE BUTTON -->
+                <button class="action-btn submit-btn" id="btn-lock-in" style="width: 100%; padding: 16px; font-size: 16px; font-weight: 700; letter-spacing: 0.5px;">
+                    ⚡ OPEN THE BARRIER [Space / Enter]
+                </button>
+
+                <!-- Hints panel -->
+                <div style="background: rgba(15,23,42,0.5); border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 12px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                        <div style="font-size: 12px; font-weight: 700; color: #94a3b8;" id="hints-title">💡 Need help? (0/3 hints shown)</div>
+                        <button class="action-btn" id="btn-reveal-hint" style="padding: 4px 10px; font-size: 11px;">Show Next Hint</button>
+                    </div>
+                    <div id="hints-container" style="font-size: 13px; color: #cbd5e1; line-height: 1.6;">
+                        <i style="color:#475569">Click "Show Next Hint" for step-by-step help.</i>
+                    </div>
+                </div>
+
+                <!-- Advanced / expert panel (hidden by default) -->
+                <details style="font-size: 12px; color: #475569;">
+                    <summary style="cursor: pointer; padding: 6px; user-select: none;">🔬 Show Technical Details (for curious players)</summary>
+                    <div style="margin-top: 10px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                        <div style="background: rgba(0,0,0,0.3); border-radius: 8px; padding: 10px;">
+                            <div style="font-size: 11px; color: #64748b; margin-bottom: 6px; font-weight: 600;">QUANTUM COMPASS</div>
+                            <div id="bloch-container"><canvas id="bloch-canvas"></canvas></div>
+                        </div>
+                        <div style="background: rgba(0,0,0,0.3); border-radius: 8px; padding: 10px;">
+                            <div style="font-size: 11px; color: #64748b; margin-bottom: 6px; font-weight: 600;">POWER LEVELS</div>
+                            <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 3px;">
+                                <span style="color:#38bdf8;">🔵 Blue</span><span id="console-p0-label" style="color:#38bdf8; font-weight:700;">100%</span>
+                            </div>
+                            <div class="meter-track" style="margin-bottom: 8px;"><div class="meter-fill-0" id="console-meter-0" style="width:100%"></div></div>
+                            <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 3px;">
+                                <span style="color:#fbbf24;">🟡 Yellow</span><span id="console-p1-label" style="color:#fbbf24; font-weight:700;">0%</span>
+                            </div>
+                            <div class="meter-track" style="margin-bottom: 8px;"><div class="meter-fill-1" id="console-meter-1" style="width:0%"></div></div>
+                            <div style="font-size: 11px; color:#94a3b8;">Wave Phase: <span id="console-phase-label">0°</span></div>
+                            <div id="console-phase-banner" class="phase-info-box" style="display:none;"></div>
+                        </div>
+                        <div style="background: rgba(0,0,0,0.3); border-radius: 8px; padding: 10px; grid-column: span 2;">
+                            <div style="font-size: 11px; color: #64748b; margin-bottom: 4px; font-weight: 600;">GATE SEQUENCE</div>
+                            <div id="console-circuit-timeline" style="font-family:'JetBrains Mono',monospace; font-size:12px; color:#e2e8f0;">[None]</div>
+                            <div id="console-inverse-preview" style="font-size:11px; color:#64748b; margin-top:3px;"></div>
+                            <div style="margin-top:6px; font-size:11px; color:#64748b;">
+                                Match: <span id="console-fidelity-label" style="color:#fbbf24; font-weight:700;">0%</span> &nbsp;|&nbsp;
+                                State: <span id="console-state-badge-text" style="color:#e2e8f0;">Blue (0)</span>
+                            </div>
+                            <details style="margin-top:4px;"><summary style="font-size:11px; color:#475569; cursor:pointer;">Show math formula</summary>
+                                <div class="state-formula" id="console-state-formula" style="margin-top:4px; font-size:11px;">|ψ⟩ = …</div>
+                            </details>
+                        </div>
+                    </div>
+                    <div style="font-size:11px; color:#475569; margin-top:8px;" id="console-state-layman-desc"></div>
+                    <div id="console-machine-banner" class="city-machine-banner" style="margin-top:8px;">
+                        <div class="machine-banner-left">
+                            <span class="machine-banner-icon" id="console-machine-icon">🏛️</span>
+                            <div>
+                                <div class="machine-banner-title" id="console-machine-title">Connected Machine</div>
+                                <div class="machine-banner-desc" id="console-machine-desc"></div>
+                            </div>
+                        </div>
+                        <div class="machine-banner-status" id="console-machine-status">LOCKED 🔒</div>
+                    </div>
+                </details>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- Chapter 7 Measurement Lab Modal -->
+    <div id="experiment-modal" class="modal-overlay">
+        <div class="modal-window" style="width: min(880px, 92vw);">
+            <div class="modal-header">
+                <div>
+                    <div style="font-size: 12px; color: var(--red); font-weight: 700; text-transform: uppercase;">Chapter 7</div>
+                    <div class="modal-title">Auditor Measurement Station & Statistical Lab</div>
+                </div>
+                <button class="close-btn" id="experiment-close-btn">✕ Close [Esc]</button>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                <!-- Left: Single-shot measurement -->
+                <div class="card">
+                    <div class="card-title">1. Real-Time Qubit Measurement</div>
+                    <div style="font-size: 13px; line-height: 1.5; color: var(--text-muted); margin-bottom: 12px;">
+                        The Auditor forces qubits to undergo computational-basis measurement, destroying superposition.
+                    </div>
+                    <button class="action-btn" id="btn-prep-superposition" style="width: 100%; margin-bottom: 8px;">
+                        Prepare fresh 50/50 Blend (via [H] Blender)
+                    </button>
+                    <button class="action-btn" id="btn-measure-single" style="width: 100%; background: rgba(244, 63, 94, 0.25); border-color: var(--red); color: #fff; margin-bottom: 8px;">
+                        Scan & Measure Qubit (Collapse State)
+                    </button>
+                    <button class="action-btn" id="btn-try-undo-measurement" style="width: 100%;">
+                        Attempt Quantum Undo (Apply Inverse)
+                    </button>
+                    <div id="measurement-result-box" style="margin-top: 12px; font-size: 12px; color: #cbd5e1; padding: 10px; background: rgba(0,0,0,0.3); border-radius: 6px;">
+                        Status: Awaiting measurement trial.
+                    </div>
+                </div>
+
+                <!-- Right: Unlimited Statistical Trials -->
+                <div class="card">
+                    <div class="card-title">2. Statistical Sampling Trials</div>
+                    <div style="font-size: 13px; color: var(--text-muted); margin-bottom: 8px;">
+                        Each trial prepares a <i>fresh, independent 50/50 blend</i> and scans it.
+                    </div>
+                    <div style="display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 4px;">
+                        <span>Total Trials Ran:</span>
+                        <b id="exp-total-trials" style="color: var(--cyan);">0</b>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 2px;">
+                        <span>Outcome 0 (Blue Light):</span>
+                        <span id="exp-p0-ratio">0 (0%)</span>
+                    </div>
+                    <div class="meter-track" style="margin-bottom: 8px;"><div class="meter-fill-0" id="exp-meter-0" style="width: 0%;"></div></div>
+                    <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 2px;">
+                        <span>Outcome 1 (Yellow Light):</span>
+                        <span id="exp-p1-ratio">0 (0%)</span>
+                    </div>
+                    <div class="meter-track" style="margin-bottom: 12px;"><div class="meter-fill-1" id="exp-meter-1" style="width: 0%;"></div></div>
+
+                    <div style="display: flex; gap: 6px; margin-bottom: 8px;">
+                        <button class="action-btn" id="btn-exp-10" style="flex: 1;">+10 Trials</button>
+                        <button class="action-btn" id="btn-exp-100" style="flex: 1;">+100 Trials</button>
+                        <button class="action-btn" id="btn-exp-1000" style="flex: 1;">+1,000 Trials</button>
+                    </div>
+                    <button class="action-btn" id="btn-exp-reset" style="width: 100%;">Reset Lab Statistics</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Aster Codex / Journal Modal -->
+    <div id="journal-modal" class="modal-overlay">
+        <div class="modal-window" style="width: min(920px, 94vw); height: min(640px, 88vh);">
+            <div class="modal-header">
+                <div class="modal-title">Aster Codex — Quantum Mechanics Journal</div>
+                <button class="close-btn" id="journal-close-btn">✕ Close [Esc/J]</button>
+            </div>
+            <div style="display: grid; grid-template-columns: 280px 1fr; gap: 20px; flex: 1; overflow: hidden;">
+                <div id="journal-topic-list" style="display: flex; flex-direction: column; gap: 6px; overflow-y: auto;">
+                    <!-- Topics injected via JS -->
+                </div>
+                <div id="journal-content-box" style="padding: 16px; background: rgba(15, 25, 45, 0.6); border-radius: 8px; overflow-y: auto; line-height: 1.6; font-size: 14px;">
+                    <!-- Content injected via JS -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================================================================
+         GATE GUIDE MODAL — Layman intro: every gate, what it does, how to open it
+         ================================================================ -->
+        <div id="gate-guide-modal" class="modal-overlay" style="display:none; z-index: 9500;">
+        <div class="modal-window" style="width: min(920px, 96vw); max-height: 94vh; overflow: hidden; padding: 0; display: flex; flex-direction: column;">
+
+            <!-- ===== LIST VIEW ===== -->
+            <div id="gg-list-view" style="display: flex; flex-direction: column; height: 100%; overflow-y: auto; padding: 24px;">
+                <div class="modal-header" style="margin-bottom: 18px;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <span style="font-size: 26px;">🚧</span>
+                        <div>
+                            <div class="modal-title">City Gate &amp; Mechanics Guide</div>
+                            <div style="font-size: 12px; color: #f59e0b; letter-spacing: 0.5px;">Click any gate below to see its Truth Table, Formula &amp; Step-by-step walkthrough!</div>
+                        </div>
+                    </div>
+                    <button class="close-btn" onclick="document.getElementById('gate-guide-modal').style.display='none'">✕ [G]</button>
+                </div>
+
+                <!-- Tool strip -->
+                <div style="display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; margin-bottom: 18px;">
+                    <div style="background:#0f172a; border:1px solid #3b82f688; border-radius:8px; padding:10px 12px;">
+                        <div style="font-weight:700; color:#60a5fa; font-size:13px; margin-bottom:3px;">[X] Light Switch</div>
+                        <div style="font-size:12px; color:#94a3b8;">Flips Blue↔Yellow. 0→1, 1→0.</div>
+                    </div>
+                    <div style="background:#0f172a; border:1px solid #c084fc88; border-radius:8px; padding:10px 12px;">
+                        <div style="font-weight:700; color:#c084fc; font-size:13px; margin-bottom:3px;">[H] Blender</div>
+                        <div style="font-size:12px; color:#94a3b8;">Makes 50/50 mix. Blend twice = back to start.</div>
+                    </div>
+                    <div style="background:#0f172a; border:1px solid #22c55e88; border-radius:8px; padding:10px 12px;">
+                        <div style="font-weight:700; color:#4ade80; font-size:13px; margin-bottom:3px;">[Z] Wave Mirror</div>
+                        <div style="font-size:12px; color:#94a3b8;">Flips wave polarity. Invisible on pure color.</div>
+                    </div>
+                </div>
+
+                <!-- Gate cards -->
+                <div style="font-size:13px; font-weight:700; color:#f59e0b; text-transform:uppercase; letter-spacing:1px; margin-bottom:10px;">🚪 Click a Gate to View its Truth Table</div>
+                <div style="display:flex; flex-direction:column; gap:8px;">
+
+                    <div onclick="showGateDetail(0)" style="cursor:pointer; background:#0f1929; border:1px solid #ef4444aa; border-radius:10px; padding:14px 16px; display:flex; align-items:center; gap:16px; transition:background 0.2s;" onmouseover="this.style.background='#1e0a0a'" onmouseout="this.style.background='#0f1929'">
+                        <div style="font-size:28px;">🔴</div>
+                        <div style="flex:1">
+                            <div style="font-weight:700; color:#ef4444; font-size:13px;">GATE 1 — District 1 City Gate (D1→D2)</div>
+                            <div style="font-size:13px; color:#cbd5e1;">Arrival Harbor → Switchworks &nbsp;|&nbsp; Two terminals, Blue + Yellow</div>
+                        </div>
+                        <div style="color:#64748b; font-size:20px;">▶</div>
+                    </div>
+
+                    <div onclick="showGateDetail(1)" style="cursor:pointer; background:#0f1929; border:1px solid #3b82f6aa; border-radius:10px; padding:14px 16px; display:flex; align-items:center; gap:16px; transition:background 0.2s;" onmouseover="this.style.background='#0a0f1a'" onmouseout="this.style.background='#0f1929'">
+                        <div style="font-size:28px;">🔵</div>
+                        <div style="flex:1">
+                            <div style="font-weight:700; color:#3b82f6; font-size:13px;">GATE 2 — Hydraulic Lift &amp; Upper Gate (D2→D3)</div>
+                            <div style="font-size:13px; color:#cbd5e1;">Switchworks → Twin-Light Garden &nbsp;|&nbsp; Flip up, Flip back</div>
+                        </div>
+                        <div style="color:#64748b; font-size:20px;">▶</div>
+                    </div>
+
+                    <div onclick="showGateDetail(2)" style="cursor:pointer; background:#0f1929; border:1px solid #c084fcaa; border-radius:10px; padding:14px 16px; display:flex; align-items:center; gap:16px; transition:background 0.2s;" onmouseover="this.style.background='#150a1f'" onmouseout="this.style.background='#0f1929'">
+                        <div style="font-size:28px;">🟣</div>
+                        <div style="flex:1">
+                            <div style="font-weight:700; color:#c084fc; font-size:13px;">GATE 3 — Twin-Light Bridge &amp; Garden Gate (D3→D4)</div>
+                            <div style="font-size:13px; color:#cbd5e1;">Twin-Light Garden → Phase Observatory &nbsp;|&nbsp; Blend to 50/50</div>
+                        </div>
+                        <div style="color:#64748b; font-size:20px;">▶</div>
+                    </div>
+
+                    <div onclick="showGateDetail(3)" style="cursor:pointer; background:#0f1929; border:1px solid #22d3eeaa; border-radius:10px; padding:14px 16px; display:flex; align-items:center; gap:16px; transition:background 0.2s;" onmouseover="this.style.background='#031520'" onmouseout="this.style.background='#0f1929'">
+                        <div style="font-size:28px;">🔭</div>
+                        <div style="flex:1">
+                            <div style="font-weight:700; color:#22d3ee; font-size:13px;">GATE 4 — Phase Observatory Harmonic Beacon (D4→D5)</div>
+                            <div style="font-size:13px; color:#cbd5e1;">Phase Observatory → Echo Bridge &nbsp;|&nbsp; H→Z→H trick</div>
+                        </div>
+                        <div style="color:#64748b; font-size:20px;">▶</div>
+                    </div>
+
+                    <div onclick="showGateDetail(4)" style="cursor:pointer; background:#0f1929; border:1px solid #818cf8aa; border-radius:10px; padding:14px 16px; display:flex; align-items:center; gap:16px; transition:background 0.2s;" onmouseover="this.style.background='#0c0c20'" onmouseout="this.style.background='#0f1929'">
+                        <div style="font-size:28px;">🌉</div>
+                        <div style="flex:1">
+                            <div style="font-weight:700; color:#818cf8; font-size:13px;">GATE 5 — Echo Bridge Relay Pylons (D5→D6)</div>
+                            <div style="font-size:13px; color:#cbd5e1;">Echo Bridge → Reversal Vault &nbsp;|&nbsp; Order matters! XH ≠ HX</div>
+                        </div>
+                        <div style="color:#64748b; font-size:20px;">▶</div>
+                    </div>
+
+                    <div onclick="showGateDetail(5)" style="cursor:pointer; background:#0f1929; border:1px solid #f59e0baa; border-radius:10px; padding:14px 16px; display:flex; align-items:center; gap:16px; transition:background 0.2s;" onmouseover="this.style.background='#1a0f02'" onmouseout="this.style.background='#0f1929'">
+                        <div style="font-size:28px;">🔒</div>
+                        <div style="flex:1">
+                            <div style="font-weight:700; color:#f59e0b; font-size:13px;">GATE 6 — Dr. Ishan's Vault Blast Door (D6→D7)</div>
+                            <div style="font-size:13px; color:#cbd5e1;">Reversal Vault → Measurement Station &nbsp;|&nbsp; Reverse H-Z-X lock</div>
+                        </div>
+                        <div style="color:#64748b; font-size:20px;">▶</div>
+                    </div>
+
+                    <div onclick="showGateDetail(6)" style="cursor:pointer; background:#0f1929; border:1px solid #ef4444aa; border-radius:10px; padding:14px 16px; display:flex; align-items:center; gap:16px; transition:background 0.2s;" onmouseover="this.style.background='#1e0a0a'" onmouseout="this.style.background='#0f1929'">
+                        <div style="font-size:28px;">🔴</div>
+                        <div style="flex:1">
+                            <div style="font-weight:700; color:#ef4444; font-size:13px;">GATE 7 — Auditor Measurement Scanner (D7→D8)</div>
+                            <div style="font-size:13px; color:#cbd5e1;">Measurement Station → Echo Core &nbsp;|&nbsp; Observe the blend, wave collapses!</div>
+                        </div>
+                        <div style="color:#64748b; font-size:20px;">▶</div>
+                    </div>
+
+                    <div onclick="showGateDetail(7)" style="cursor:pointer; background:#0f1929; border:1px solid #eab308aa; border-radius:10px; padding:14px 16px; display:flex; align-items:center; gap:16px; transition:background 0.2s;" onmouseover="this.style.background='#1a1402'" onmouseout="this.style.background='#0f1929'">
+                        <div style="font-size:28px;">👑</div>
+                        <div style="flex:1">
+                            <div style="font-weight:700; color:#eab308; font-size:13px;">GATE 8 — The Great Echo Core Pinnacle (D8 Final)</div>
+                            <div style="font-size:13px; color:#cbd5e1;">Echo Core Pinnacle &nbsp;|&nbsp; H→Z→H master synthesis</div>
+                        </div>
+                        <div style="color:#64748b; font-size:20px;">▶</div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- ===== DETAIL VIEW (Truth Table Black Screen) ===== -->
+            <div id="gg-detail-view" style="display:none; flex-direction:column; height:100%; background:#050a10; overflow-y:auto;">
+
+                <!-- Back header -->
+                <div style="display:flex; align-items:center; gap:12px; padding:16px 20px; border-bottom:1px solid #1e293b; position:sticky; top:0; background:#050a10; z-index:10;">
+                    <button onclick="hideGateDetail()" style="background:#1e293b; border:1px solid #334155; color:#94a3b8; padding:7px 14px; border-radius:6px; cursor:pointer; font-size:13px; font-weight:600; transition:background 0.2s;" onmouseover="this.style.background='#334155'" onmouseout="this.style.background='#1e293b'">
+                        ◀ Back to Gate List
+                    </button>
+                    <div id="gg-detail-title" style="font-size:16px; font-weight:700; color:#f1f5f9;"></div>
+                </div>
+
+                <!-- Content injected by JS -->
+                <div id="gg-detail-content" style="padding:24px; flex:1;"></div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+    // ============================================================
+    // GATE DETAIL DATA: truth tables + circuit diagrams for all 8 gates
+    // ============================================================
+    const GATE_DETAILS = [
+        // GATE 1
+        {
+            emoji: "🔴",
+            color: "#ef4444",
+            title: "GATE 1 — District 1 City Gate",
+            subtitle: "D1 Arrival Harbor → D2 Switchworks",
+            concept: "Pure States: Blue (0) & Yellow (1)",
+            conceptDesc: "Your lantern has two pure colors: Blue (0) and Yellow (1). Each terminal reads exactly one color. This is the most basic quantum fact.",
+            formula: "|0⟩  and  |1⟩",
+            circuitSvg: `<svg width="100%" height="90" viewBox="0 0 500 90" style="font-family:monospace">
+  <text x="20" y="30" fill="#94a3b8" font-size="13">Terminal Alpha</text>
+  <line x1="20" y1="50" x2="160" y2="50" stroke="#3b82f6" stroke-width="2"/>
+  <rect x="160" y="35" width="60" height="30" fill="#1e3a5f" stroke="#3b82f6" stroke-width="2" rx="4"/>
+  <text x="190" y="55" fill="#3b82f6" font-size="12" text-anchor="middle">|0⟩</text>
+  <line x1="220" y1="50" x2="360" y2="50" stroke="#22c55e" stroke-width="2"/>
+  <text x="370" y="55" fill="#22c55e" font-size="14">✔ OPEN</text>
+  <text x="20" y="80" fill="#94a3b8" font-size="13">Terminal Beta</text>
+  <line x1="20" y1="70" x2="160" y2="70" stroke="#f59e0b" stroke-width="2"/>
+  <rect x="160" y="55" width="60" height="30" fill="#3d2a00" stroke="#f59e0b" stroke-width="2" rx="4"/>
+  <text x="190" y="75" fill="#f59e0b" font-size="12" text-anchor="middle">|1⟩</text>
+</svg>`,
+            truthTable: [
+                { input: "0", ops: "Set Prep 0",   output: "0 (Blue)",  match: "Alpha ✔" },
+                { input: "1", ops: "Set Prep 1",   output: "1 (Yellow)", match: "Beta ✔" },
+            ],
+            steps: [
+                { icon:"①", text:"Walk to Terminal Alpha (left console) — Press [E]", color:"#3b82f6" },
+                { icon:"②", text:'Click "🔵 Set to Blue (0)" → Click "⚡ ACTIVATE"', color:"#3b82f6" },
+                { icon:"③", text:"Walk to Terminal Beta (right console) — Press [E]", color:"#f59e0b" },
+                { icon:"④", text:'Click "[X] Flip" → Yellow (1) → Click "⚡ ACTIVATE"', color:"#f59e0b" },
+                { icon:"🔗", text:"Gate slides open! Glowing ramp appears — walk up into D2!", color:"#22c55e" },
+            ],
+        },
+        // GATE 2
+        {
+            emoji: "🔵",
+            color: "#3b82f6",
+            title: "GATE 2 — Hydraulic Lift & Upper Gate",
+            subtitle: "D2 Switchworks → D3 Twin-Light Garden",
+            concept: "[X] Bit-Flip Gate: The Light Switch",
+            conceptDesc: "X flips Blue to Yellow and Yellow back to Blue. Flip it twice = same as doing nothing (reversible!). X² = Identity.",
+            formula: "X|0⟩ = |1⟩     X|1⟩ = |0⟩     X² = I",
+            circuitSvg: `<svg width="100%" height="60" viewBox="0 0 500 60">
+  <line x1="20" y1="35" x2="120" y2="35" stroke="#3b82f6" stroke-width="2"/>
+  <text x="30" y="28" fill="#3b82f6" font-size="12">|0⟩</text>
+  <rect x="120" y="20" width="40" height="30" fill="#1e293b" stroke="#60a5fa" stroke-width="2" rx="4"/>
+  <text x="140" y="40" fill="#60a5fa" font-size="14" text-anchor="middle">X</text>
+  <line x1="160" y1="35" x2="260" y2="35" stroke="#f59e0b" stroke-width="2"/>
+  <text x="170" y="28" fill="#f59e0b" font-size="12">|1⟩ LIFT UP</text>
+  <rect x="260" y="20" width="40" height="30" fill="#1e293b" stroke="#60a5fa" stroke-width="2" rx="4"/>
+  <text x="280" y="40" fill="#60a5fa" font-size="14" text-anchor="middle">X</text>
+  <line x1="300" y1="35" x2="400" y2="35" stroke="#3b82f6" stroke-width="2"/>
+  <text x="310" y="28" fill="#3b82f6" font-size="12">|0⟩ GATE OPEN</text>
+  <text x="430" y="40" fill="#22c55e" font-size="14">✔</text>
+</svg>`,
+            truthTable: [
+                { input: "0", ops: "X",  output: "1 (Yellow)", match: "Lift ↑ ✔" },
+                { input: "1", ops: "X",  output: "0 (Blue)",   match: "Upper Gate ✔" },
+            ],
+            steps: [
+                { icon:"①", text:"At Lift Console (ground floor) — Press [E]", color:"#f59e0b" },
+                { icon:"②", text:'Click "[X] Flip" → Yellow (1) → "⚡ ACTIVATE" → Lift rises!', color:"#f59e0b" },
+                { icon:"③", text:"Ride lift up OR walk the illuminated side staircase", color:"#94a3b8" },
+                { icon:"④", text:"At Upper Gate Console (upper terrace) — Press [E]", color:"#3b82f6" },
+                { icon:"⑤", text:'Click "[X] Flip" → Blue (0) → "⚡ ACTIVATE"', color:"#3b82f6" },
+                { icon:"🔗", text:"Upper Gate opens! Walk into District 3!", color:"#22c55e" },
+            ],
+        },
+        // GATE 3
+        {
+            emoji: "🟣",
+            color: "#c084fc",
+            title: "GATE 3 — Twin-Light Bridge & Garden Gate",
+            subtitle: "D3 Twin-Light Garden → D4 Phase Observatory",
+            concept: "[H] Hadamard Gate: The Quantum Blender",
+            conceptDesc: "H creates a perfect 50/50 superposition. Applying H twice returns you exactly to the start. H|0⟩=|+⟩, H|+⟩=|0⟩.",
+            formula: "H|0⟩ = |+⟩ = (|0⟩+|1⟩)/√2     H|+⟩ = |0⟩     H²=I",
+            circuitSvg: `<svg width="100%" height="60" viewBox="0 0 500 60">
+  <line x1="20" y1="35" x2="120" y2="35" stroke="#3b82f6" stroke-width="2"/>
+  <text x="30" y="28" fill="#3b82f6" font-size="12">|0⟩</text>
+  <rect x="120" y="20" width="40" height="30" fill="#1e293b" stroke="#c084fc" stroke-width="2" rx="4"/>
+  <text x="140" y="40" fill="#c084fc" font-size="14" text-anchor="middle">H</text>
+  <line x1="160" y1="35" x2="280" y2="35" stroke="#9333ea" stroke-width="2"/>
+  <text x="165" y="28" fill="#c084fc" font-size="12">|+⟩ = 50/50 blend</text>
+  <text x="300" y="40" fill="#22c55e" font-size="14">Bridge ✔</text>
+  <line x1="20" y1="55" x2="120" y2="55" stroke="#9333ea" stroke-width="2"/>
+  <rect x="120" y="42" width="40" height="22" fill="#1e293b" stroke="#c084fc" stroke-width="2" rx="4"/>
+  <text x="140" y="57" fill="#c084fc" font-size="14" text-anchor="middle">H</text>
+  <line x1="160" y1="55" x2="260" y2="55" stroke="#3b82f6" stroke-width="2"/>
+  <text x="265" y="59" fill="#3b82f6" font-size="12">|0⟩ back</text>
+</svg>`,
+            truthTable: [
+                { input: "0",   ops: "H",   output: "|+⟩ = 50/50 Blue+Yellow", match: "Bridge solid ✔" },
+                { input: "|+⟩", ops: "H",   output: "0 (Blue)",               match: "Garden Gate ✔" },
+            ],
+            steps: [
+                { icon:"①", text:"At Bridge Console (left of garden) — Press [E]", color:"#c084fc" },
+                { icon:"②", text:'Click "[H] Blender" → lantern glows purple (50/50 mix)', color:"#c084fc" },
+                { icon:"③", text:'Click "⚡ ACTIVATE" → Bridge solidifies & gate unlocks!', color:"#22c55e" },
+                { icon:"④", text:"At Garden Gate Console — Press [E]", color:"#f59e0b" },
+                { icon:"⑤", text:'Click "[H] Blender" again → un-blends back to Blue (0)', color:"#f59e0b" },
+                { icon:"🔗", text:"Walk up the glowing ramp into District 4!", color:"#22c55e" },
+            ],
+        },
+        // GATE 4
+        {
+            emoji: "🔭",
+            color: "#22d3ee",
+            title: "GATE 4 — Phase Observatory Harmonic Beacon",
+            subtitle: "D4 Phase Observatory → D5 Echo Bridge",
+            concept: "The H→Z→H Trick: Flip Without [X]!",
+            conceptDesc: "The Flip Switch [X] is broken here! But H·Z·H = X — three gates compose into the exact same effect as flipping. Like taking a detour that arrives at the same destination.",
+            formula: "H·Z·H = X      so      H→Z→H|0⟩ = |1⟩",
+            circuitSvg: `<svg width="100%" height="60" viewBox="0 0 560 60">
+  <line x1="10" y1="35" x2="80" y2="35" stroke="#3b82f6" stroke-width="2"/>
+  <text x="15" y="28" fill="#3b82f6" font-size="12">|0⟩</text>
+  <rect x="80" y="20" width="34" height="30" fill="#1e293b" stroke="#c084fc" stroke-width="2" rx="4"/>
+  <text x="97" y="40" fill="#c084fc" font-size="13" text-anchor="middle">H</text>
+  <line x1="114" y1="35" x2="174" y2="35" stroke="#9333ea" stroke-width="2"/>
+  <text x="118" y="28" fill="#9333ea" font-size="11">|+⟩</text>
+  <rect x="174" y="20" width="34" height="30" fill="#1e293b" stroke="#4ade80" stroke-width="2" rx="4"/>
+  <text x="191" y="40" fill="#4ade80" font-size="13" text-anchor="middle">Z</text>
+  <line x1="208" y1="35" x2="268" y2="35" stroke="#9333ea" stroke-width="2"/>
+  <text x="212" y="28" fill="#9333ea" font-size="11">|−⟩</text>
+  <rect x="268" y="20" width="34" height="30" fill="#1e293b" stroke="#c084fc" stroke-width="2" rx="4"/>
+  <text x="285" y="40" fill="#c084fc" font-size="13" text-anchor="middle">H</text>
+  <line x1="302" y1="35" x2="400" y2="35" stroke="#f59e0b" stroke-width="2"/>
+  <text x="308" y="28" fill="#f59e0b" font-size="12">|1⟩ = Yellow!</text>
+  <text x="415" y="40" fill="#22c55e" font-size="14">✔ Open!</text>
+</svg>`,
+            truthTable: [
+                { input: "0", ops: "H",    output: "|+⟩ 50/50",  match: "Step 1" },
+                { input: "|+⟩", ops: "Z", output: "|−⟩ mirrored", match: "Step 2" },
+                { input: "|−⟩", ops: "H", output: "1 (Yellow!)", match: "Beacon ✔" },
+            ],
+            steps: [
+                { icon:"①", text:"Walk up the ramp to Lens Console (LEFT) — Press [E]", color:"#c084fc" },
+                { icon:"②", text:'Click "[H] Blender" then "[Z] Mirror" → Click "⚡ ACTIVATE"', color:"#4ade80" },
+                { icon:"③", text:"Walk to Beacon Console (RIGHT side) — Press [E]", color:"#22d3ee" },
+                { icon:"④", text:'Click "[H]" → "[Z]" → "[H]" in sequence', color:"#22d3ee" },
+                { icon:"⑤", text:'Click "⚡ ACTIVATE" → lantern becomes Yellow without [X]!', color:"#f59e0b" },
+                { icon:"🔗", text:"Harmonic Beacon clears! Walk across ramp to District 5!", color:"#22c55e" },
+            ],
+        },
+        // GATE 5
+        {
+            emoji: "🌉",
+            color: "#818cf8",
+            title: "GATE 5 — Echo Bridge Relay Pylons",
+            subtitle: "D5 Echo Bridge → D6 Reversal Vault",
+            concept: "Order Matters! XH ≠ HX",
+            conceptDesc: "In quantum, applying X then H gives a different result from H then X. Like making a sandwich: bread+butter ≠ butter+bread. Two pylons use different orders to extend the bridge.",
+            formula: "X·H|0⟩ = |−⟩    H·X|0⟩ = |+⟩    XH ≠ HX !",
+            circuitSvg: `<svg width="100%" height="80" viewBox="0 0 520 80">
+  <text x="10" y="25" fill="#818cf8" font-size="12">Left Pylon (X→H):</text>
+  <line x1="10" y1="40" x2="100" y2="40" stroke="#3b82f6" stroke-width="2"/>
+  <rect x="100" y="26" width="32" height="28" fill="#1e293b" stroke="#60a5fa" stroke-width="2" rx="3"/>
+  <text x="116" y="45" fill="#60a5fa" font-size="13" text-anchor="middle">X</text>
+  <line x1="132" y1="40" x2="192" y2="40" stroke="#f59e0b" stroke-width="2"/>
+  <rect x="192" y="26" width="32" height="28" fill="#1e293b" stroke="#c084fc" stroke-width="2" rx="3"/>
+  <text x="208" y="45" fill="#c084fc" font-size="13" text-anchor="middle">H</text>
+  <line x1="224" y1="40" x2="310" y2="40" stroke="#9333ea" stroke-width="2"/>
+  <text x="315" y="44" fill="#818cf8" font-size="12">|−⟩ mirrored blend</text>
+  <text x="10" y="70" fill="#818cf8" font-size="12">Right Pylon (H→X):</text>
+  <line x1="10" y1="80" x2="100" y2="80" stroke="#3b82f6" stroke-width="2"/>
+  <rect x="100" y="66" width="32" height="28" fill="#1e293b" stroke="#c084fc" stroke-width="2" rx="3"/>
+  <text x="116" y="85" fill="#c084fc" font-size="13" text-anchor="middle">H</text>
+  <line x1="132" y1="80" x2="192" y2="80" stroke="#9333ea" stroke-width="2"/>
+  <rect x="192" y="66" width="32" height="28" fill="#1e293b" stroke="#60a5fa" stroke-width="2" rx="3"/>
+  <text x="208" y="85" fill="#60a5fa" font-size="13" text-anchor="middle">X</text>
+  <line x1="224" y1="80" x2="310" y2="80" stroke="#9333ea" stroke-width="2"/>
+  <text x="315" y="84" fill="#818cf8" font-size="12">|+⟩ even blend</text>
+</svg>`,
+            truthTable: [
+                { input: "0", ops: "X → H", output: "|−⟩ mirrored mix", match: "Left Pylon ✔" },
+                { input: "0", ops: "H → X", output: "|+⟩ even mix",     match: "Right Pylon ✔" },
+            ],
+            steps: [
+                { icon:"①", text:"At Left Pylon Console — Press [E]", color:"#60a5fa" },
+                { icon:"②", text:'Click "[X] Flip" FIRST → then "[H] Blend" → "⚡ ACTIVATE"', color:"#60a5fa" },
+                { icon:"③", text:"At Right Pylon Console — Press [E]", color:"#c084fc" },
+                { icon:"④", text:'Click "[H] Blend" FIRST → then "[X] Flip" → "⚡ ACTIVATE"', color:"#c084fc" },
+                { icon:"🔗", text:"Echo Bridge powers on! Walk across to Dr. Ishan's Vault!", color:"#22c55e" },
+            ],
+        },
+        // GATE 6
+        {
+            emoji: "🔒",
+            color: "#f59e0b",
+            title: "GATE 6 — Dr. Ishan's Vault Blast Door",
+            subtitle: "D6 Reversal Vault → D7 Measurement Station",
+            concept: "Quantum Reversal: Undo steps in REVERSE order",
+            conceptDesc: "The vault was scrambled by running X → Z → H. Every quantum operation is reversible. To undo it, run the inverse steps backwards: H⁻¹ → Z⁻¹ → X⁻¹. Since X, Z, H are self-inverse: just run X → Z → H in reverse = H → Z → X.",
+            formula: "Lock: X→Z→H    Unlock: H→Z→X    (reverse each step)",
+            circuitSvg: `<svg width="100%" height="80" viewBox="0 0 520 80">
+  <text x="10" y="18" fill="#f59e0b" font-size="12">Lock (how vault was scrambled):</text>
+  <line x1="10" y1="35" x2="80" y2="35" stroke="#3b82f6" stroke-width="2"/>
+  <rect x="80" y="22" width="30" height="26" fill="#1e293b" stroke="#ef4444" stroke-width="2" rx="3"/>
+  <text x="95" y="40" fill="#ef4444" font-size="13" text-anchor="middle">X</text>
+  <line x1="110" y1="35" x2="160" y2="35" stroke="#999" stroke-width="2"/>
+  <rect x="160" y="22" width="30" height="26" fill="#1e293b" stroke="#ef4444" stroke-width="2" rx="3"/>
+  <text x="175" y="40" fill="#ef4444" font-size="13" text-anchor="middle">Z</text>
+  <line x1="190" y1="35" x2="240" y2="35" stroke="#999" stroke-width="2"/>
+  <rect x="240" y="22" width="30" height="26" fill="#1e293b" stroke="#ef4444" stroke-width="2" rx="3"/>
+  <text x="255" y="40" fill="#ef4444" font-size="13" text-anchor="middle">H</text>
+  <line x1="270" y1="35" x2="320" y2="35" stroke="#f87171" stroke-width="2"/>
+  <text x="325" y="40" fill="#f87171" font-size="12">SCRAMBLED 🔒</text>
+
+  <text x="10" y="58" fill="#22c55e" font-size="12">Unlock (your steps — reverse order):</text>
+  <line x1="10" y1="75" x2="80" y2="75" stroke="#f87171" stroke-width="2"/>
+  <rect x="80" y="62" width="30" height="26" fill="#0f1e0f" stroke="#22c55e" stroke-width="2" rx="3"/>
+  <text x="95" y="80" fill="#22c55e" font-size="13" text-anchor="middle">H</text>
+  <line x1="110" y1="75" x2="160" y2="75" stroke="#999" stroke-width="2"/>
+  <rect x="160" y="62" width="30" height="26" fill="#0f1e0f" stroke="#22c55e" stroke-width="2" rx="3"/>
+  <text x="175" y="80" fill="#22c55e" font-size="13" text-anchor="middle">Z</text>
+  <line x1="190" y1="75" x2="240" y2="75" stroke="#999" stroke-width="2"/>
+  <rect x="240" y="62" width="30" height="26" fill="#0f1e0f" stroke="#22c55e" stroke-width="2" rx="3"/>
+  <text x="255" y="80" fill="#22c55e" font-size="13" text-anchor="middle">X</text>
+  <line x1="270" y1="75" x2="320" y2="75" stroke="#3b82f6" stroke-width="2"/>
+  <text x="325" y="80" fill="#22c55e" font-size="12">|0⟩ OPEN ✔</text>
+</svg>`,
+            truthTable: [
+                { input: "0", ops: "H",     output: "|+⟩", match: "1st reverse step" },
+                { input: "|+⟩", ops: "Z",   output: "|−⟩", match: "2nd reverse step" },
+                { input: "|−⟩", ops: "X",   output: "0 (Blue)", match: "Vault Unlocked ✔" },
+            ],
+            steps: [
+                { icon:"①", text:"At Archive Lock Console — Press [E]", color:"#f59e0b" },
+                { icon:"②", text:'Click "[H] Blender" — 1st reverse step', color:"#c084fc" },
+                { icon:"③", text:'Click "[Z] Mirror" — 2nd reverse step', color:"#4ade80" },
+                { icon:"④", text:'Click "[X] Flip" — 3rd reverse step', color:"#60a5fa" },
+                { icon:"⑤", text:'Click "⚡ ACTIVATE" → lock reversal confirmed!', color:"#22c55e" },
+                { icon:"🔗", text:"Blast door retracts! Walk up ramp to District 7!", color:"#22c55e" },
+            ],
+        },
+        // GATE 7
+        {
+            emoji: "🔴",
+            color: "#ef4444",
+            title: "GATE 7 — Auditor Measurement Scanner",
+            subtitle: "D7 Measurement Station → D8 Echo Core Pinnacle",
+            concept: "Quantum Measurement: Observation Collapses the Wave!",
+            conceptDesc: "While in 50/50 superposition, the lantern is BOTH Blue and Yellow simultaneously. The moment a scanner OBSERVES it, it randomly picks one — and can never go back. This is called wave function collapse.",
+            formula: "Measure |+⟩ → Blue (0) with 50% prob  OR  Yellow (1) with 50% prob",
+            circuitSvg: `<svg width="100%" height="70" viewBox="0 0 520 70">
+  <line x1="10" y1="40" x2="100" y2="40" stroke="#3b82f6" stroke-width="2"/>
+  <rect x="100" y="26" width="32" height="28" fill="#1e293b" stroke="#c084fc" stroke-width="2" rx="3"/>
+  <text x="116" y="45" fill="#c084fc" font-size="13" text-anchor="middle">H</text>
+  <line x1="132" y1="40" x2="210" y2="40" stroke="#9333ea" stroke-width="2"/>
+  <text x="138" y="33" fill="#9333ea" font-size="12">|+⟩ blend</text>
+  <rect x="210" y="22" width="60" height="36" fill="#1a0a0a" stroke="#ef4444" stroke-width="2" rx="4"/>
+  <text x="225" y="38" fill="#ef4444" font-size="10">SCANNER</text>
+  <text x="225" y="52" fill="#ef4444" font-size="10">👁️ OBSERVE</text>
+  <line x1="270" y1="33" x2="360" y2="18" stroke="#3b82f6" stroke-width="2" stroke-dasharray="5,3"/>
+  <text x="365" y="22" fill="#3b82f6" font-size="12">|0⟩ 50%</text>
+  <line x1="270" y1="47" x2="360" y2="62" stroke="#f59e0b" stroke-width="2" stroke-dasharray="5,3"/>
+  <text x="365" y="66" fill="#f59e0b" font-size="12">|1⟩ 50%</text>
+  <text x="100" y="70" fill="#ef4444" font-size="11">↳ Wave collapses! Cannot undo after measuring!</text>
+</svg>`,
+            truthTable: [
+                { input: "|+⟩", ops: "Measure", output: "0 (Blue) — 50% chance",   match: "Barrier drops ✔" },
+                { input: "|+⟩", ops: "Measure", output: "1 (Yellow) — 50% chance", match: "Barrier drops ✔" },
+            ],
+            steps: [
+                { icon:"①", text:"Walk onto the glowing red Measurement Station platform", color:"#ef4444" },
+                { icon:"②", text:"Press [E] to open the Auditor Lab scanner panel", color:"#ef4444" },
+                { icon:"③", text:'Click "[H] Blender" to create a 50/50 blend first', color:"#c084fc" },
+                { icon:"④", text:'Click "🔬 Single-Shot Measurement" — scanner observes the lantern!', color:"#f59e0b" },
+                { icon:"⑤", text:"Wave collapses! Scanner accepts either outcome — gate unlocks either way.", color:"#94a3b8" },
+                { icon:"🔗", text:"Scanner barrier drops! Grand ramp to the Echo Core opens!", color:"#22c55e" },
+            ],
+        },
+        // GATE 8
+        {
+            emoji: "👑",
+            color: "#eab308",
+            title: "GATE 8 — The Great Echo Core Pinnacle",
+            subtitle: "D8 — Final Synthesis (Save the City!)",
+            concept: "Master Synthesis: H→Z→H = X (without the switch!)",
+            conceptDesc: "The Echo Core requires the exact same quantum trick as Gate 4 (H·Z·H=X) to reignite the city's harmonic resonance. Start at Blue (0), run the three-step sequence, arrive at Yellow (1) — the city is saved!",
+            formula: "H→Z→H|0⟩ = |1⟩     Same as X but using only H & Z",
+            circuitSvg: `<svg width="100%" height="60" viewBox="0 0 560 60">
+  <line x1="10" y1="35" x2="80" y2="35" stroke="#3b82f6" stroke-width="2"/>
+  <text x="15" y="28" fill="#3b82f6" font-size="12">|0⟩</text>
+  <rect x="80" y="20" width="34" height="30" fill="#1e293b" stroke="#c084fc" stroke-width="2" rx="4"/>
+  <text x="97" y="40" fill="#c084fc" font-size="13" text-anchor="middle">H</text>
+  <line x1="114" y1="35" x2="174" y2="35" stroke="#9333ea" stroke-width="2"/>
+  <text x="118" y="28" fill="#9333ea" font-size="11">|+⟩</text>
+  <rect x="174" y="20" width="34" height="30" fill="#1e293b" stroke="#4ade80" stroke-width="2" rx="4"/>
+  <text x="191" y="40" fill="#4ade80" font-size="13" text-anchor="middle">Z</text>
+  <line x1="208" y1="35" x2="268" y2="35" stroke="#9333ea" stroke-width="2"/>
+  <text x="212" y="28" fill="#9333ea" font-size="11">|−⟩</text>
+  <rect x="268" y="20" width="34" height="30" fill="#1e293b" stroke="#c084fc" stroke-width="2" rx="4"/>
+  <text x="285" y="40" fill="#c084fc" font-size="13" text-anchor="middle">H</text>
+  <line x1="302" y1="35" x2="400" y2="35" stroke="#eab308" stroke-width="2"/>
+  <text x="308" y="28" fill="#eab308" font-size="12">|1⟩ CITY SAVED!</text>
+  <text x="425" y="40" fill="#22c55e" font-size="18">🏆</text>
+</svg>`,
+            truthTable: [
+                { input: "0",   ops: "H",  output: "|+⟩ 50/50",  match: "Step 1 ✔" },
+                { input: "|+⟩", ops: "Z",  output: "|−⟩ mirrored", match: "Step 2 ✔" },
+                { input: "|−⟩", ops: "H",  output: "1 (Yellow)",   match: "🏆 CITY SAVED!" },
+            ],
+            steps: [
+                { icon:"①", text:"Climb the grand illuminated ramp to the highest rooftop", color:"#eab308" },
+                { icon:"②", text:"Press [E] at the Echo Core Master Console", color:"#eab308" },
+                { icon:"③", text:'Click "[H] Blender" — creates 50/50 blend', color:"#c084fc" },
+                { icon:"④", text:'Click "[Z] Mirror" — flips wave polarity', color:"#4ade80" },
+                { icon:"⑤", text:'Click "[H] Blender" again — waves recombine into Yellow (1)!', color:"#c084fc" },
+                { icon:"⚡", text:'Click "⚡ ACTIVATE" — Echo Core reignites! Aster is saved! 🎉', color:"#22c55e" },
+            ],
+        },
+    ];
+
+    function showGateDetail(idx) {
+        const d = GATE_DETAILS[idx];
+        document.getElementById('gg-list-view').style.display = 'none';
+        const dv = document.getElementById('gg-detail-view');
+        dv.style.display = 'flex';
+        document.getElementById('gg-detail-title').innerHTML =
+            `<span style="color:${d.color}">${d.emoji} ${d.title}</span>`;
+
+        // Build truth table rows
+        let ttRows = d.truthTable.map(r =>
+            `<tr>
+                <td style="padding:8px 14px; color:#60a5fa; font-family:monospace; font-size:14px;">${r.input}</td>
+                <td style="padding:8px 14px; text-align:center">
+                    ${r.ops.split('→').map(op => op.trim()).map(op =>
+                        `<span style="display:inline-block; background:#1e293b; border:1px solid #475569; border-radius:4px; padding:2px 8px; margin:0 2px; color:#c084fc; font-weight:700; font-size:13px;">${op}</span>`
+                    ).join('<span style="color:#64748b; margin:0 3px">→</span>')}
+                </td>
+                <td style="padding:8px 14px; color:#f59e0b; font-family:monospace; font-size:14px;">${r.output}</td>
+                <td style="padding:8px 14px; color:#22c55e; font-size:13px;">${r.match}</td>
+            </tr>`
+        ).join('');
+
+        // Build steps
+        let stepsHtml = d.steps.map(s =>
+            `<div style="display:flex; gap:12px; align-items:flex-start; margin-bottom:10px;">
+                <span style="font-size:18px; min-width:28px;">${s.icon}</span>
+                <div style="font-size:14px; color:${s.color}; line-height:1.5;">${s.text}</div>
+            </div>`
+        ).join('');
+
+        document.getElementById('gg-detail-content').innerHTML = `
+            <!-- Subtitle -->
+            <div style="color:#64748b; font-size:13px; margin-bottom:20px; padding-bottom:12px; border-bottom:1px solid #1e293b;">
+                ${d.subtitle}
+            </div>
+
+            <!-- Concept callout -->
+            <div style="background:#0a0f1a; border:1px solid ${d.color}44; border-left:4px solid ${d.color}; border-radius:8px; padding:14px 18px; margin-bottom:20px;">
+                <div style="font-weight:700; color:${d.color}; font-size:14px; margin-bottom:6px;">🧠 The Quantum Concept</div>
+                <div style="font-size:14px; color:#cbd5e1; line-height:1.6;">${d.conceptDesc}</div>
+            </div>
+
+            <!-- Formula box (black, monospace) -->
+            <div style="background:#000; border:1px solid #334155; border-radius:8px; padding:16px; margin-bottom:20px; font-family:monospace; font-size:16px; color:#22d3ee; text-align:center; letter-spacing:1px;">
+                ${d.formula}
+            </div>
+
+            <!-- Circuit diagram -->
+            <div style="background:#080d14; border:1px solid #1e293b; border-radius:8px; padding:16px; margin-bottom:20px;">
+                <div style="font-size:12px; font-weight:700; color:#475569; text-transform:uppercase; letter-spacing:1px; margin-bottom:10px;">⚡ Quantum Circuit Diagram</div>
+                ${d.circuitSvg}
+            </div>
+
+            <!-- Truth table -->
+            <div style="margin-bottom:20px;">
+                <div style="font-size:13px; font-weight:700; color:#f59e0b; text-transform:uppercase; letter-spacing:1px; margin-bottom:10px;">📊 Truth Table</div>
+                <div style="overflow-x:auto;">
+                    <table style="width:100%; border-collapse:collapse; background:#080d14; border-radius:8px; overflow:hidden;">
+                        <thead>
+                            <tr style="background:#0f172a;">
+                                <th style="padding:10px 14px; text-align:left; color:#475569; font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:1px;">Input State</th>
+                                <th style="padding:10px 14px; text-align:center; color:#475569; font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:1px;">Operation(s)</th>
+                                <th style="padding:10px 14px; text-align:left; color:#475569; font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:1px;">Output State</th>
+                                <th style="padding:10px 14px; text-align:left; color:#475569; font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:1px;">Gate Effect</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${ttRows}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Steps -->
+            <div style="background:#0a0f1a; border:1px solid #1e293b; border-radius:8px; padding:18px;">
+                <div style="font-size:13px; font-weight:700; color:#22c55e; text-transform:uppercase; letter-spacing:1px; margin-bottom:14px;">✅ Step-by-Step: How to Open This Gate</div>
+                ${stepsHtml}
+            </div>
+        `;
+    }
+
+    function hideGateDetail() {
+        document.getElementById('gg-detail-view').style.display = 'none';
+        document.getElementById('gg-list-view').style.display = 'flex';
+        document.getElementById('gg-list-view').style.flexDirection = 'column';
+    }
+    </script>
+
+<div id="help-modal" class="modal-overlay">
+        <div class="modal-window" style="width: min(840px, 94vw); max-height: 90vh;">
+            <div class="modal-header">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <span style="font-size: 24px;">🚀</span>
+                    <div>
+                        <div class="modal-title">How to Play — Beginner's Guide</div>
+                        <div style="font-size: 12px; color: var(--cyan); letter-spacing: 0.5px;">QUANTUM ECHO: THE CITY THAT FORGOT</div>
+                    </div>
+                </div>
+                <button class="close-btn" id="help-close-btn">✕ Got it! [Esc]</button>
+            </div>
+            <div style="overflow-y: auto; padding-right: 6px; display: flex; flex-direction: column; gap: 16px;">
+                <div class="guide-grid">
+                    <div class="guide-step-card">
+                        <div class="step-num">1</div>
+                        <div class="step-content">
+                            <h4>🏃 How to Move & Look</h4>
+                            <p>Use <b>W, A, S, D</b> or <b>Arrow Keys</b> on your keyboard, or tap the <b>On-Screen D-Pad</b> buttons at the bottom-left.</p>
+                            <p class="guide-tip">💡 Drag anywhere on the screen with your mouse to rotate the camera.</p>
+                        </div>
+                    </div>
+                    <div class="guide-step-card">
+                        <div class="step-num">2</div>
+                        <div class="step-content">
+                            <h4>⚡ How to Interact</h4>
+                            <p>Walk near any glowing terminal (like <b>Terminal Alpha</b> on your <b>LEFT</b>). Press <b>[E]</b> on your keyboard, click the <b>[E] INTERACT</b> button, or <b>directly click the 3D terminal</b>!</p>
+                        </div>
+                    </div>
+                    <div class="guide-step-card">
+                        <div class="step-num">3</div>
+                        <div class="step-content">
+                            <h4>💡 What is the Echo Lantern?</h4>
+                            <p>Your lantern holds a <b>quantum light source (qubit)</b>. It can shine in <b>Blue Mode (0)</b>, <b>Yellow Mode (1)</b>, or a <b>50/50 Blend</b> (both colors glowing at the same time!). The 3D sphere shows its direction.</p>
+                        </div>
+                    </div>
+                    <div class="guide-step-card">
+                        <div class="step-num">4</div>
+                        <div class="step-content">
+                            <h4>🛠️ How to Solve Quantum Puzzles</h4>
+                            <p>Each machine requires a specific <b>Target State</b>. Click <b>"Set to Blue / Yellow"</b> or apply <b>Quantum Tools (Flip Switch [X], Blender [H], Mirror [Z])</b> to match the goal, then click <b>"⚡ ACTIVATE CITY MACHINE"</b>!</p>
+                            <p class="guide-tip">🎯 <b>For Terminal Alpha:</b> Click <b>"🔵 Set to Blue (0 / Reset)"</b>, then click <b>"⚡ ACTIVATE CITY MACHINE"</b>!</p>
+                        </div>
+                    </div>
+                    <div class="guide-step-card">
+                        <div class="step-num">5</div>
+                        <div class="step-content">
+                            <h4>🦘 How to Jump & Mind the Edge</h4>
+                            <p>Press <b>[J]</b> or <b>[Space]</b> on your keyboard, or tap the purple <b>[J] JUMP</b> button to hop onto higher steps, platforms, and bridges.</p>
+                            <p class="guide-tip">⚠️ <b>Mind the edges:</b> If you jump outside or fall off the platform into the void, you will die and respawn safely at the checkpoint!</p>
+                        </div>
+                    </div>
+                </div>
+                <button class="action-btn" id="help-start-btn" style="padding: 14px; font-size: 16px; font-weight: 700; background: var(--cyan); color: #000; width: 100%;">
+                    Start Playing ➔
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Fall / Death & Respawn Screen (Layman Level) -->
+    <div id="death-overlay" class="death-overlay">
+        <div class="death-card">
+            <div class="death-icon">💥</div>
+            <div class="death-title">YOU JUMPED OUTSIDE!</div>
+            <div class="death-desc">You fell into the quantum void! Don't worry, respawning you back on safe ground...</div>
+            <div class="death-tip">💡 <b>Tip:</b> Press <b>[J]</b> or <b>[Space]</b> to jump onto steps, but watch your footing near platform edges!</div>
+        </div>
+    </div>
+
+    <!-- ================================================================
+         ACTIVATION DIAGRAM MODAL — Diagrammatic visualization when activating
+         References User Attachments 1, 2, and 3
+         ================================================================ -->
+    <div id="activation-diagram-modal" class="modal-overlay" style="display:none; z-index: 9900; background: rgba(2, 6, 23, 0.94); backdrop-filter: blur(8px);">
+        <div class="modal-window" style="width: min(880px, 96vw); max-height: 94vh; overflow-y: auto; padding: 24px; background: #030712; border: 1.5px solid #0284c7; box-shadow: 0 0 50px rgba(56, 189, 248, 0.25);">
+            
+            <!-- Header -->
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; border-bottom: 1px solid rgba(56, 189, 248, 0.2); padding-bottom: 12px;">
+                <div>
+                    <div style="font-size: 11px; font-weight: 700; color: #38bdf8; text-transform: uppercase; letter-spacing: 1.5px; display: flex; align-items: center; gap: 8px;">
+                        <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #22c55e; box-shadow: 0 0 8px #22c55e;"></span>
+                        QUANTUM MACHINE ACTIVATION IN PROGRESS
+                    </div>
+                    <div class="modal-title" id="act-modal-title" style="font-size: 22px; color: #f8fafc; margin-top: 4px;">
+                        Connected City Machine
+                    </div>
+                </div>
+                <div style="background: rgba(34, 197, 94, 0.15); border: 1px solid #22c55e; border-radius: 6px; padding: 5px 12px; font-size: 12px; font-weight: 700; color: #4ade80;">
+                    STATUS: 100% MATCH ✅
+                </div>
+            </div>
+
+            <!-- Formula Screen (Exactly like User Picture 3) -->
+            <div style="background: #000000; border: 1.5px solid rgba(34, 211, 238, 0.4); border-radius: 10px; padding: 12px 18px; text-align: center; margin-bottom: 16px; box-shadow: inset 0 0 20px rgba(34, 211, 238, 0.1);">
+                <div id="act-modal-formula" style="font-family: 'JetBrains Mono', monospace; font-size: 17px; font-weight: 700; color: #22d3ee; letter-spacing: 1px;">
+                    X|0⟩ = |1⟩   X|1⟩ = |0⟩   X² = I
+                </div>
+            </div>
+
+            <!-- Quantum Circuit Execution Diagram (Picture 3) -->
+            <div style="background: #080f1d; border: 1px solid rgba(56, 189, 248, 0.25); border-radius: 12px; padding: 16px; margin-bottom: 16px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <div style="font-size: 12px; font-weight: 700; color: #f59e0b; text-transform: uppercase; letter-spacing: 1px;">
+                        ⚡ QUANTUM CIRCUIT DIAGRAM
+                    </div>
+                    <div style="font-size: 11px; color: #94a3b8;">
+                        Target Qubit Operation Executed
+                    </div>
+                </div>
+                <div id="act-modal-circuit-svg" style="background: #030712; border: 1px solid rgba(255,255,255,0.06); border-radius: 8px; padding: 12px; display: flex; justify-content: center; align-items: center; overflow-x: auto;">
+                    <!-- Circuit SVG inserted here -->
+                </div>
+            </div>
+
+            <!-- Step-by-Step Bloch Sphere Evolution (User Attachment 2 reference) -->
+            <div style="background: #080f1d; border: 1px solid rgba(56, 189, 248, 0.25); border-radius: 12px; padding: 16px; margin-bottom: 16px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                    <div style="font-size: 12px; font-weight: 700; color: #38bdf8; text-transform: uppercase; letter-spacing: 1px;">
+                        🌐 BLOCH SPHERE STATE EVOLUTION (STEP-BY-STEP)
+                    </div>
+                    <div style="font-size: 11px; color: #94a3b8;">
+                        Vector Trajectory &amp; Rotation Axis
+                    </div>
+                </div>
+                <!-- Container for row of step spheres (like Picture 2) -->
+                <div id="act-modal-bloch-steps-row" style="display: flex; justify-content: space-around; align-items: flex-start; gap: 12px; overflow-x: auto; padding: 6px 4px;">
+                    <!-- Step spheres generated dynamically -->
+                </div>
+            </div>
+
+            <!-- Gate Matrix & Explanation Strip (User Attachment 1 reference) -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 18px;">
+                <div style="background: #080f1d; border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 12px;">
+                    <div style="font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; margin-bottom: 6px;">
+                        UNITARY OPERATOR MATRIX (R)
+                    </div>
+                    <div id="act-modal-matrix-content" style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #38bdf8; line-height: 1.4; white-space: pre;">
+                    </div>
+                </div>
+                <div style="background: #080f1d; border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 12px;">
+                    <div style="font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; margin-bottom: 6px;">
+                        CITY MACHINE RESPONSE
+                    </div>
+                    <div id="act-modal-machine-effect" style="font-size: 13px; color: #f1f5f9; line-height: 1.4;">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action button -->
+            <div style="display: flex; justify-content: flex-end; gap: 12px;">
+                <button id="act-modal-continue-btn" class="action-btn submit-btn" style="padding: 12px 28px; font-size: 14px; font-weight: 700; background: linear-gradient(135deg, #0284c7, #38bdf8);">
+                    PROCEED TO MACHINE UNLOCK ▶ [Space]
+                </button>
+        </div>
+    </div>
+    <!-- ================================================================
+         PARTY POPPERS & CONFETTI CANVAS + GRAND VICTORY CELEBRATION MODAL
+         ================================================================ -->
+    <canvas id="celebration-confetti-canvas" style="display:none; position:fixed; inset:0; width:100vw; height:100vh; pointer-events:none; z-index:99999;"></canvas>
+
+    <div id="victory-celebration-modal" class="modal-overlay" style="display:none; z-index:9999; background:rgba(2, 6, 23, 0.94); backdrop-filter: blur(12px);">
+        <div class="modal-window" style="width: min(720px, 94vw); text-align: center; padding: 32px 24px; background: linear-gradient(180deg, #091224 0%, #030712 100%); border: 2px solid #f59e0b; box-shadow: 0 0 70px rgba(245, 158, 11, 0.4); border-radius: 16px;">
+            <div style="font-size: 56px; line-height: 1; margin-bottom: 12px; filter: drop-shadow(0 0 18px rgba(245, 158, 11, 0.9));">
+                🎉 🏆 🎊
+            </div>
+            <div style="font-size: 28px; font-weight: 800; color: #f59e0b; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 6px; text-shadow: 0 0 24px rgba(245, 158, 11, 0.6);">
+                VICTORY! THE CITY OF ASTER IS SAVED!
+            </div>
+            <div style="font-size: 15px; color: #38bdf8; font-weight: 600; margin-bottom: 22px;">
+                You Mastered All 8 Chapters of Quantum Computing &amp; Stabilized the Great Echo Core!
+            </div>
+
+            <!-- Stats & Achievements -->
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 24px;">
+                <div style="background: rgba(15, 23, 42, 0.85); border: 1.5px solid rgba(74, 222, 128, 0.4); border-radius: 10px; padding: 12px 8px;">
+                    <div style="font-size: 24px; font-weight: 800; color: #4ade80;">8 / 8</div>
+                    <div style="font-size: 11px; color: #94a3b8; font-weight: 700; text-transform: uppercase; margin-top: 2px;">Gates Cleared 🟢</div>
+                </div>
+                <div style="background: rgba(15, 23, 42, 0.85); border: 1.5px solid rgba(245, 158, 11, 0.4); border-radius: 10px; padding: 12px 8px;">
+                    <div style="font-size: 24px; font-weight: 800; color: #f59e0b;">100%</div>
+                    <div style="font-size: 11px; color: #94a3b8; font-weight: 700; text-transform: uppercase; margin-top: 2px;">Fidelity Target ✨</div>
+                </div>
+                <div style="background: rgba(15, 23, 42, 0.85); border: 1.5px solid rgba(192, 132, 252, 0.4); border-radius: 10px; padding: 12px 8px;">
+                    <div style="font-size: 24px; font-weight: 800; color: #c084fc;">H · Z · H</div>
+                    <div style="font-size: 11px; color: #94a3b8; font-weight: 700; text-transform: uppercase; margin-top: 2px;">Quantum Master 🎓</div>
+                </div>
+            </div>
+
+            <div style="background: #030712; border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 16px; margin-bottom: 24px; font-size: 14px; color: #cbd5e1; line-height: 1.6;">
+                "From understanding Blue (0) and Yellow (1) light, to blending 50/50 superpositions and steering phase interference with H-Z-H, you unlocked the true power of quantum circuits. The city of Aster is shining bright once again!" — <b>Guide Drone Lumi</b>
+            </div>
+
+            <!-- Action Buttons -->
+            <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
+                <button id="btn-fire-more-poppers" class="action-btn" style="padding: 14px 24px; font-size: 15px; font-weight: 800; background: linear-gradient(135deg, #f59e0b, #ec4899); color: #fff; box-shadow: 0 0 20px rgba(236, 72, 153, 0.4);">
+                    🎉 POP MORE POPPERS!
+                </button>
+                <button id="btn-victory-continue" class="action-btn submit-btn" style="padding: 14px 28px; font-size: 15px; font-weight: 800; background: linear-gradient(135deg, #0284c7, #38bdf8); color: #fff;">
+                    Keep Exploring Aster [Space]
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pause Menu Modal -->
+    <div id="pause-modal" class="modal-overlay">
+        <div class="modal-window" style="width: 380px;">
+            <div class="modal-header">
+                <div class="modal-title" style="text-align: center; width: 100%;">Game Paused</div>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 8px;">
+                <button class="action-btn" id="btn-pause-resume" style="padding: 14px; font-size: 15px; font-weight: 700; background: var(--cyan); color: #000;">
+                    Resume Game [Esc]
+                </button>
+                <button class="action-btn" id="btn-pause-checkpoint">Reload Checkpoint</button>
+                <button class="action-btn" id="btn-pause-journal">Open Codex / Journal [C]</button>
+                <div style="font-size: 12px; color: var(--text-muted); margin-top: 10px; text-align: center;">
+                    <b>Controls:</b> WASD to Walk | J/Space to Jump | E to Interact | C for Codex | Esc to Pause
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Game Script -->
+    <script src="game.js?v=38"></script>
+</body>
+</html>
